@@ -97,7 +97,7 @@ if __name__ == "__main__":
     # Cписок кадастровых номер для получения изображений участков
     cadastral_parcel_numbers = ["77:01:0001034:1071","54:35:101256:17","03:24:011204:11","38:36:000012:4033","02:55:010830:13"]
     # API Geocode Яндекс.Краты
-    api_key = "0ec2675a-e31e-42ea-8acc-fded64e0ec86"
+    api_key = ""
     objectCadastralParcel = CadastralParcel()
     # Запускаем работу скрипта, передавая список кадастровых номеро и api ключ
     objectCadastralParcel.start_test_task(cadastral_parcel_numbers, api_key)
