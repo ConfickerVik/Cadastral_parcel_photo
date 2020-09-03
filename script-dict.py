@@ -3,6 +3,7 @@ import requests as req
 import json
 import os
 import pandas
+from decimal import *
 
 class CadastralParcel:
     # Получение адресов по кадастровым номерам 
@@ -49,7 +50,9 @@ class CadastralParcel:
             string_to_json = json.loads(result_get_api)
             # Получаем координаты из результата запроса и сохраняем их
             envelope = string_to_json["response"]["GeoObjectCollection"]["featureMember"][0]["GeoObject"]["boundedBy"]["Envelope"]
+            center = string_to_json["response"]["GeoObjectCollection"]["featureMember"][0]["GeoObject"]["Point"]['pos']
             dict_cadastral[key]['coordinates'] = envelope
+            dict_cadastral[key]['coordinates']['pos'] = center
 
         return dict_cadastral
     # Отрисовка полигонов на изображениях со спутника
@@ -64,13 +67,23 @@ class CadastralParcel:
         else:
             os.mkdir(path)
 
+        getcontext().prec = 6
+
         for key in dict_data.keys():
-            # Получаем координаты нижнего угла и верхнего 
-            lower_corner = dict_data[key]['coordinates']["lowerCorner"].split(" ")
-            upper_corner = dict_data[key]['coordinates']["upperCorner"].split(" ")
+            # Получаем координаты нижнего и верхнего угла и центра  
+            lower_corner = dict_data[key]['coordinates']['lowerCorner'].split(" ")
+            upper_corner = dict_data[key]['coordinates']['upperCorner'].split(" ")
+            center_coordinate = dict_data[key]['coordinates']['pos'].split(" ")
+            #Расчитываем координаты полигона
+            difference_x = (Decimal(upper_corner[0]) - Decimal(lower_corner[0]))/Decimal(16)
+            difference_y = (Decimal(upper_corner[1]) - Decimal(lower_corner[1]))/Decimal(10)
+            leftLowerCorner = f"{Decimal(center_coordinate[0]) - difference_x},{Decimal(center_coordinate[1]) - difference_y}"
+            leftUpperCorner = f"{Decimal(center_coordinate[0]) - difference_x},{Decimal(center_coordinate[1]) + difference_y}"
+            rightUpperCorner = f"{Decimal(center_coordinate[0]) + difference_x},{Decimal(center_coordinate[1]) + difference_y}"
+            rightLowerCorner = f"{Decimal(center_coordinate[0]) + difference_x},{Decimal(center_coordinate[1]) - difference_y}"
             # Формируем строку координат для запроса Static API
-            polygon_coordinates = f"{lower_corner[0]},{lower_corner[1]},{upper_corner[0]},{lower_corner[1]},{upper_corner[0]},{upper_corner[1]},{lower_corner[0]},{upper_corner[1]},{lower_corner[0]},{lower_corner[1]}"
-            url_yandex_api_static = f"https://static-maps.yandex.ru/1.x/?l=sat&pl={polygon_coordinates}"
+            polygon_coordinates = f"{leftLowerCorner},{leftUpperCorner},{rightUpperCorner},{rightLowerCorner},{leftLowerCorner}"
+            url_yandex_api_static = f"https://static-maps.yandex.ru/1.x/?l=sat&pt={center_coordinate[0]},{center_coordinate[1]},flag&pl={polygon_coordinates}"
             result_api_static = req.get(url_yandex_api_static)
             # Сохраняем картинку по созданному пути с именем кадастрового номера через дефис
             out = open(f"{path}{dict_data[key]['cadastral_parcel_dash']}.jpg", "wb")
@@ -99,7 +112,7 @@ if __name__ == "__main__":
     # Cписок кадастровых номеров для получения изображений участков
     cadastral_parcel_numbers = excel_data_df['Cadastral parcel'].tolist()
     # API Geocode Яндекс.Краты
-    api_key = ""
+    api_key = "0ec2675a-e31e-42ea-8acc-fded64e0ec86"
     objectCadastralParcel = CadastralParcel()
     # Запускаем работу скрипта, передавая список кадастровых номеро и api ключ
     objectCadastralParcel.start_test_task(cadastral_parcel_numbers, api_key)
