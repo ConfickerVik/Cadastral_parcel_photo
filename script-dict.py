@@ -112,7 +112,7 @@ if __name__ == "__main__":
     # Cписок кадастровых номеров для получения изображений участков
     cadastral_parcel_numbers = excel_data_df['Cadastral parcel'].tolist()
     # API Geocode Яндекс.Краты
-    api_key = "0ec2675a-e31e-42ea-8acc-fded64e0ec86"
+    api_key = ""
     objectCadastralParcel = CadastralParcel()
     # Запускаем работу скрипта, передавая список кадастровых номеро и api ключ
     objectCadastralParcel.start_test_task(cadastral_parcel_numbers, api_key)
